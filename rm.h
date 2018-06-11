@@ -37,23 +37,23 @@ class rm
 
         solution t_opt(solution& s,int& position);
 
-        solution intra_relocation(solution s,int& position);
+        solution intra_relocation(solution& s,int& position);
 
-        solution inter_relocation(solution s,int& position);
+        solution inter_relocation(solution& s,int& position);
 
-        solution intra_exchange(solution s,int& position);
+        solution intra_exchange(solution& s,int& position);
 
-        solution inter_exchange(solution s,int& position);
+        solution inter_exchange(solution& s,int& position);
 
         solution t_opt(solution& s);
 
-        solution intra_relocation(solution s);
+        solution intra_relocation(solution& s);
 
-        solution inter_relocation(solution s);
+        solution inter_relocation(solution& s);
 
-        solution intra_exchange(solution s);
+        solution intra_exchange(solution& s);
 
-        solution inter_exchange(solution s);
+        solution inter_exchange(solution& s);
 
         void perturb(solution& s);
 
