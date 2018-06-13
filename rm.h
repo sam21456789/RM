@@ -24,6 +24,7 @@ class rm
         double alpha=1.0;
         int kmax=5;
         vector<vector<int>> Nlist;          //Neighbor list
+        solution minS;
 
     public:
 
@@ -60,6 +61,10 @@ class rm
         void exe();
 
         void Initialize(solution& s);
+
+        void Allsubset(vector<node>& route,vector<node>& Eject,int& Pbest,pair<int,vector<node>>& best,int routeNO, vector<int>& pcnt);
+
+        void cal_eject(vector<node>& route,vector<int>& order,vector<node>& Eject,int& Pbest,pair<int,vector<node>>& best,int routeNO, vector<int>& pcnt);
 };
 
 #endif // RM_H_INCLUDED

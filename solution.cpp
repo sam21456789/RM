@@ -34,7 +34,7 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
     double _Pc=0;    //capacity penalty
     double _Ptw=0;   //time window penalty
 
-    for(auto i=route_set.begin(); i!=route_set.end(); ++i)
+    for(auto i=route_set.begin(); i!=route_set.end();)
     {
         if(i->size()==2)
             i=route_set.erase(i);
@@ -75,7 +75,7 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
             }
             _Ptw+=Ptwf;
             _Pc+=(c>Mcapacity)?(c-Mcapacity):0;     //if greater than max capacity
-
+            ++i;
         }
     }
     this->Pc=_Pc;
@@ -131,15 +131,6 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
     this->Fp=this->Pc+alpha*this->Ptw;
     this->Nvehicle=route_set.size();
 }
-
-//void solution::rmCost(int routeNum,double alpha,int Mcapacity)
-//{
-//    double oriPc=(route_set[routeNum].back().cap>Mcapacity)?route_set[routeNum].back().cap-Mcapacity:0;
-//    double oriPtw=route_set[routeNum].back().twf;
-//    this->Pc-=oriPc;
-//    this->Ptw-=oriPtw;
-//    this->Fp=this->Pc+alpha*this->Ptw;
-//}
 
 void solution::print()
 {

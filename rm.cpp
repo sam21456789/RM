@@ -67,14 +67,12 @@ rm::rm(const string inputdata,const double maxtime)
 
 //bool rm::check(vector<node>& route)                //Check if this route in this route satisfy the capacity or the time windows
 //{
-//    int c=0;
 //    for(auto i=route.begin()+1; i!=route.end(); ++i)
 //    {
 //        double dist=Dist_table[(i-1)->NO][i->NO];
 //        double st=custList[(i-1)->NO].Tready;
-//        c= i->cap = (i-1)->cap+custList[i->NO].Demand;
 //        i->Arrival=max((i-1)->Arrival+st+dist,custList[i->NO].Tready);
-//        if(i->Arrival>i->ltArrival||c>Vcapacity)
+//        if(i->Arrival >i ->ltArrival)
 //            return false;
 //    }
 //    return true;
@@ -82,19 +80,15 @@ rm::rm(const string inputdata,const double maxtime)
 
 bool rm::check(vector<node>& route)                  //Check if this route in this route satisfy the capacity or the time windows
 {
-    int c=0;
     for(auto j=route.begin()+1; j!=route.end(); ++j)
     {
         int src= (j-1)->NO;
         int dest= j->NO;
-        c+= custList[dest].Demand;
         double a_j = (j-1)->Arrival + custList[src].Tservice + Dist_table[src][dest];
 
         if(a_j <= custList[dest].Tdue)      // a_j <= l_j
             j->Arrival= max(a_j,custList[dest].Tready);
         else
-            return false;
-        if(c>Vcapacity)
             return false;
     }
     return true;
@@ -105,6 +99,7 @@ void rm::randominsert(node& cust, solution& s, vector<solution>& feasible_set, v
     feasible_set.clear();
     infeasible_set.clear();
     solution tmp=s;  //copy solution
+    double minFp=DBL_MAX;
     for(unsigned int i=0; i<s.route_set.size(); ++i)          //calculate all possible position
     {
         for(unsigned int j=1; j<s.route_set[i].size(); ++j)
@@ -112,11 +107,15 @@ void rm::randominsert(node& cust, solution& s, vector<solution>& feasible_set, v
             vector<node>& arr=tmp.route_set[i];
             arr.insert(arr.begin()+j,cust);
             tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-            double newFp=tmp.Fp;     // new penalty
-            if(newFp==0)
+            if(tmp.Fp==0)
                 feasible_set.push_back(tmp);
             else
-                infeasible_set.push_back(make_pair(object(i,j,newFp),tmp));
+            {
+                if(tmp.Fp<minFp)
+                    minS=tmp;
+                infeasible_set.push_back(make_pair(object(i,j,tmp.Fp),tmp));
+            }
+
             arr.erase(arr.begin()+j);
         }
     }
@@ -145,38 +144,74 @@ solution rm::t_opt(solution& s,int& position)   //OK part
 {
     solution tmp=s;
     int rsize=tmp.route_set.size();
-    int r1,r2,p,cust;
-    vector<node> ary1=tmp.route_set[position];
-    vector<int>::iterator closest;
-    do
+    vector<node>& ary1=tmp.route_set[position];
+//    int r1,r2,p,cust;
+//    vector<int>::iterator clost;
+//    do
+//    {
+//        r1=rand()%(ary1.size()-1);
+//        cust=ary1[r1].NO;
+//        do
+//        {
+//            p=rand()%rsize;
+//        }
+//        while(p==position);
+//        vector<node>& ary=tmp.route_set[p];
+//        r2=rand()%(ary.size()-1);
+//        clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2+1].NO);
+//    }
+//    while(clost==Nlist[cust].end());
+//
+//    vector<node>& ary2=tmp.route_set[p];
+//    vector<node> t1(ary1.begin(),ary1.begin()+r1+1);
+//    t1.insert(t1.end(),ary2.begin()+r2+1,ary2.end());
+//    vector<node> t2(ary2.begin(),ary2.begin()+r2+1);
+//    t2.insert(t2.end(),ary1.begin()+r1+1,ary1.end());
+//    ary1=t1;
+//    ary2=t2;
+//    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+//    return tmp;
+
+    solution minNeighbor=s;
+    for(unsigned int i=0; i<ary1.size()-1; ++i)
     {
-        r1=rand()%(ary1.size()-1);
-        cust=ary1[r1].NO;
-        do
+        int cust=ary1[i].NO;
+        for(int j=0; j<rsize; ++j)
         {
-            p=rand()%rsize;
-        }while(p==position);
-        vector<node>& ary=tmp.route_set[p];
-        r2=rand()%(ary.size()-1);
-        closest=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2+1].NO);
-    }while(closest==Nlist[cust].end());
-
-    vector<node> ary2=tmp.route_set[p];
-    vector<node> t1(ary1.begin(),ary1.begin()+r1+1);
-    t1.insert(t1.end(),ary2.begin()+r2+1,ary2.end());
-    vector<node> t2(ary2.begin(),ary2.begin()+r2+1);
-    t2.insert(t2.end(),ary1.begin()+r1+1,ary1.end());
-    ary1=t1;    ary2=t2;
-    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-
-    return tmp;
+            if(j!=position)
+            {
+                vector<node>& ary2=tmp.route_set[j];
+                vector<node> c1=ary1;
+                vector<node> c2=ary2;
+                for(unsigned int k=1; k<ary2.size()-1; ++k)
+                {
+                    auto clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary2[k+1].NO);
+                    if(clost!=Nlist[cust].end())
+                    {
+                        vector<node> t1(ary1.begin(),ary1.begin()+i+1);
+                        t1.insert(t1.end(),ary2.begin()+k+1,ary2.end());
+                        vector<node> t2(ary2.begin(),ary2.begin()+k+1);
+                        t2.insert(t2.end(),ary1.begin()+i+1,ary1.end());
+                        ary1=t1;
+                        ary2=t2;
+                        tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+                        if(tmp.Fp<minNeighbor.Fp)
+                            minNeighbor=tmp;
+                        ary1=c1;
+                        ary2=c2;
+                    }
+                }
+            }
+        }
+    }
+    return minNeighbor;
 }
 
 solution rm::intra_relocation(solution& s,int& position) //OK
 {
     solution tmp=s;
     vector<node>& ary=tmp.route_set[position];
-    vector<int>::iterator predecessor,succesor;
+//    vector<int>::iterator predecessor,succesor;
 //    int r,l,cust;
 //    do
 //    {
@@ -197,27 +232,27 @@ solution rm::intra_relocation(solution& s,int& position) //OK
 //    ary.erase(ary.begin()+r);
 //    ary.insert(ary.begin()+l,node(cust));
 //    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-//
+
 //    return tmp;
 
-    vector<solution> neighbor;
-    int cust;
+    solution minNeighbor=s;
     int rsize=ary.size();
-    for(int i=1;i<rsize-1;++i)
+    for(int i=1; i<rsize-1; ++i)
     {
-        cust=ary[i].NO;
-        for(int j=1;j<rsize-1;++j)
+        int cust=ary[i].NO;
+        for(int j=1; j<rsize-1; ++j)
         {
             if(j<i)
             {
-                predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j-1].NO);
-                succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
+                auto predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j-1].NO);
+                auto succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
                 if(predecessor!=Nlist[cust].end()||succesor!=Nlist[cust].end())
                 {
                     ary.erase(ary.begin()+i);
                     ary.insert(ary.begin()+j,node(cust));
                     tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-                    neighbor.push_back(tmp);
+                    if(tmp.Fp<minNeighbor.Fp)
+                        minNeighbor=tmp;
 
                     ary.erase(ary.begin()+j);
                     ary.insert(ary.begin()+i,node(cust));
@@ -225,14 +260,15 @@ solution rm::intra_relocation(solution& s,int& position) //OK
             }
             if(j>i)
             {
-                predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
-                succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j+1].NO);
+                auto predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
+                auto succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j+1].NO);
                 if(predecessor!=Nlist[cust].end()||succesor!=Nlist[cust].end())
                 {
                     ary.erase(ary.begin()+i);
                     ary.insert(ary.begin()+j,node(cust));
                     tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-                    neighbor.push_back(tmp);
+                    if(tmp.Fp<minNeighbor.Fp)
+                        minNeighbor=tmp;
 
                     ary.erase(ary.begin()+j);
                     ary.insert(ary.begin()+i,node(cust));
@@ -240,13 +276,8 @@ solution rm::intra_relocation(solution& s,int& position) //OK
             }
         }
     }
-    if(!neighbor.empty())
-    {
-        sort(neighbor.begin(),neighbor.end());
-        tmp=neighbor.front();
-    }
+    return minNeighbor;
 
-    return tmp;
 }
 
 solution rm::inter_relocation(solution& s,int& position) //OK
@@ -254,35 +285,63 @@ solution rm::inter_relocation(solution& s,int& position) //OK
     solution tmp=s;
     int rsize=tmp.route_set.size();
     vector<node>& ary1=tmp.route_set[position];  //infeasible route
-    int r1,r2,p,cust;
-    vector<int>::iterator predecessor,succesor;
-    do
+//    int r1,r2,p,cust;
+//    vector<int>::iterator predecessor,succesor;
+//    do
+//    {
+//        r1=rand()%(ary1.size()-2)+1;
+//        cust=ary1[r1].NO;
+//        do
+//        {
+//            p=rand()%rsize;
+//        }while(p==position);
+//        vector<node>& ary=tmp.route_set[p];
+//        r2=rand()%(ary.size()-1)+1;
+////        predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2-1].NO);
+////        succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
+//    }while(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end());
+//    vector<node>& ary2=tmp.route_set[p];
+//    ary1.erase(ary1.begin()+r1);
+//    ary2.insert(ary2.begin()+r2,node(cust));
+//    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+
+//    return tmp;
+
+    solution minNeighbor=s;
+    for(unsigned int k=1; k<ary1.size()-1; ++k)
     {
-        r1=rand()%(ary1.size()-2)+1;
-        cust=ary1[r1].NO;
-        do
+        int cust=ary1[k].NO;
+        for(int i=0; i<rsize; ++i)
         {
-            p=rand()%rsize;
-        }while(p==position);
-        vector<node>& ary=tmp.route_set[p];
-        r2=rand()%(ary.size()-1)+1;
-        predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2-1].NO);
-        succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
-    }while(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end());
-
-    vector<node>& ary2=tmp.route_set[p];
-    ary1.erase(ary1.begin()+r1);
-    ary2.insert(ary2.begin()+r2,node(cust));
-    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-
-    return tmp;
+            if(i!=position)
+            {
+                vector<node>& ary2=tmp.route_set[i];
+                for(unsigned int j=1; j<ary2.size(); ++j)
+                {
+                    auto predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary2[j-1].NO);
+                    auto succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary2[j].NO);
+                    if(predecessor!=Nlist[cust].end()||succesor!=Nlist[cust].end())
+                    {
+                        ary1.erase(ary1.begin()+k);
+                        ary2.insert(ary2.begin()+j,node(cust));
+                        tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+                        if(tmp.Fp<minNeighbor.Fp)
+                            minNeighbor=tmp;
+                        ary2.erase(ary2.begin()+j);
+                        ary1.insert(ary1.begin()+k,node(cust));
+                    }
+                }
+            }
+        }
+    }
+    return minNeighbor;
 }
 
 solution rm::intra_exchange(solution& s,int& position)   //OK
 {
     solution tmp=s;
     vector<node>& ary=tmp.route_set[position];
-    vector<int>::iterator clost;
+//    vector<int>::iterator clost;
 //    int r,l,cust;
 //    do
 //    {
@@ -296,31 +355,25 @@ solution rm::intra_exchange(solution& s,int& position)   //OK
 //
 //    return tmp;
 
-    vector<solution> neighbor;
-    int cust;
+    solution minNeighbor=s;
     int rsize=ary.size();
-    for(int i=1;i<rsize-1;++i)
+    for(int i=1; i<rsize-1; ++i)
     {
-        cust=ary[i].NO;
-        for(int j=i+1;j<rsize-1;++j)
+        int cust=ary[i].NO;
+        for(int j=i+1; j<rsize-1; ++j)
         {
-            clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
+            auto clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[j].NO);
             if(clost!=Nlist[cust].end())
             {
                 swap(ary[i],ary[j]);
                 tmp.setCost(Dist_table,custList,Vcapacity,alpha);
-                neighbor.push_back(tmp);
+                if(tmp.Fp<minNeighbor.Fp)
+                    minNeighbor=tmp;
                 swap(ary[i],ary[j]);
             }
         }
     }
-    if(!neighbor.empty())
-    {
-        sort(neighbor.begin(),neighbor.end());
-        tmp=neighbor.front();
-    }
-
-    return tmp;
+    return minNeighbor;
 }
 
 solution rm::inter_exchange(solution& s,int& position)   //OK
@@ -328,55 +381,83 @@ solution rm::inter_exchange(solution& s,int& position)   //OK
     solution tmp=s;
     int rsize=tmp.route_set.size();
     vector<node>& ary1=tmp.route_set[position];
-    int r1,r2,p,cust;
-    vector<int>::iterator clost;
-    do
-    {
-        r1=rand()%(ary1.size()-2)+1;
-        cust=ary1[r1].NO;
-        do
-        {
-            p=rand()%rsize;
-        }while(p==position);
-        vector<node>& ary=tmp.route_set[p];
-        r2=rand()%(ary.size()-2)+1;
-        clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
-    }while(clost==Nlist[cust].end());
-    vector<node>& ary2=tmp.route_set[p];
-    swap(ary1[r1],ary2[r2]);
-    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+//    int r1,r2,p,cust;
+//    vector<int>::iterator clost;
+//    do
+//    {
+//        r1=rand()%(ary1.size()-2)+1;
+//        cust=ary1[r1].NO;
+//        do
+//        {
+//            p=rand()%rsize;
+//        }while(p==position);
+//        vector<node>& ary=tmp.route_set[p];
+//        r2=rand()%(ary.size()-2)+1;
+//        clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
+//    }while(clost==Nlist[cust].end());
+//    vector<node>& ary2=tmp.route_set[p];
+//    swap(ary1[r1],ary2[r2]);
+//    tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+//    return tmp;
 
-    return tmp;
+    solution minNeighbor=s;
+    for(unsigned int k=1; k<ary1.size()-1; ++k)
+    {
+        int cust=ary1[k].NO;
+        for(int i=0; i<rsize; ++i)
+        {
+            if(i!=position)
+            {
+                vector<node>& ary2=tmp.route_set[i];
+                for(unsigned int j=1; j<ary2.size()-1; ++j)
+                {
+                    auto clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary2[j].NO);
+                    if(clost!=Nlist[cust].end())
+                    {
+                        swap(ary1[k],ary2[j]);
+                        tmp.setCost(Dist_table,custList,Vcapacity,alpha);
+                        if(tmp.Fp<minNeighbor.Fp)
+                            minNeighbor=tmp;
+                        swap(ary1[k],ary2[j]);
+                    }
+                }
+            }
+        }
+    }
+    return minNeighbor;
 }
 //------------------------------------------------------------------------------------------------------------
 solution rm::t_opt(solution& s) //OK part
 {
     solution tmp=s;
     int rsize=tmp.route_set.size();
-
-    int r1,r2,p,cust;
-    int position=rand()%rsize;
-    vector<node> ary1=tmp.route_set[position];
+    int r1,r2,p,cust,position;
     vector<int>::iterator closest;
     do
     {
-        r1=rand()%(ary1.size()-1);
-        cust=ary1[r1].NO;
+        position=rand()%rsize;
+        vector<node> arr=tmp.route_set[position];
+        r1=rand()%(arr.size()-1);
+        cust=arr[r1].NO;
         do
         {
             p=rand()%rsize;
-        }while(p==position);
+        }
+        while(p==position);
         vector<node>& ary=tmp.route_set[p];
         r2=rand()%(ary.size()-1);
         closest=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2+1].NO);
-    }while(closest==Nlist[cust].end());
+    }
+    while(closest==Nlist[cust].end());
 
-    vector<node> ary2=tmp.route_set[p];
+    vector<node>& ary1=tmp.route_set[position];
+    vector<node>& ary2=tmp.route_set[p];
     vector<node> t1(ary1.begin(),ary1.begin()+r1+1);
     t1.insert(t1.end(),ary2.begin()+r2+1,ary2.end());
     vector<node> t2(ary2.begin(),ary2.begin()+r2+1);
     t2.insert(t2.end(),ary1.begin()+r1+1,ary1.end());
-    ary1=t1;    ary2=t2;
+    ary1=t1;
+    ary2=t2;
     tmp.setCost(Dist_table,custList,Vcapacity,alpha);
 
     return tmp;
@@ -386,20 +467,21 @@ solution rm::intra_relocation(solution& s) //OK
 {
     solution tmp=s;
     int rsize=tmp.route_set.size();
-
-    int position=rand()%rsize;
-    vector<node>& ary=tmp.route_set[position];
-    int r,l,cust;
+    int r,l,cust,position;
     vector<int>::iterator predecessor,succesor;
     do
     {
+        position=rand()%rsize;
+        vector<node>& ary=tmp.route_set[position];
         r=rand()%(ary.size()-2)+1;
         cust=ary[r].NO;
         l=rand()%(ary.size()-2)+1;  //insert position
         predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[l].NO);
         succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[l+1].NO);
-    }while(r==l||(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end()));
+    }
+    while(r==l||(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end()));
 
+    vector<node>& ary=tmp.route_set[position];
     ary.erase(ary.begin()+r);
     ary.insert(ary.begin()+l,node(cust));
     tmp.setCost(Dist_table,custList,Vcapacity,alpha);
@@ -412,24 +494,27 @@ solution rm::inter_relocation(solution& s) //OK
     solution tmp=s;
     int rsize=tmp.route_set.size();
 
-    int position=rand()%rsize;
-    vector<node>& ary1=tmp.route_set[position];  //infeasible route
-    int r1,r2,p,cust;
+    int r1,r2,p,cust,position;
     vector<int>::iterator predecessor,succesor;
     do
     {
+        position=rand()%rsize;
+        vector<node>& ary1=tmp.route_set[position];
         r1=rand()%(ary1.size()-2)+1;
         cust=ary1[r1].NO;
         do
         {
             p=rand()%rsize;
-        }while(p==position);
+        }
+        while(p==position);
         vector<node>& ary=tmp.route_set[p];
         r2=rand()%(ary.size()-1)+1;
         predecessor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2-1].NO);
         succesor=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
-    }while(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end());
+    }
+    while(predecessor==Nlist[cust].end()&&succesor==Nlist[cust].end());
 
+    vector<node>& ary1=tmp.route_set[position];
     vector<node>& ary2=tmp.route_set[p];
     ary1.erase(ary1.begin()+r1);
     ary2.insert(ary2.begin()+r2,node(cust));
@@ -442,7 +527,6 @@ solution rm::intra_exchange(solution& s)   //OK
 {
     solution tmp=s;
     int rsize=tmp.route_set.size();
-
     int r,l,cust,position;
     vector<int>::iterator clost;
     do
@@ -453,7 +537,8 @@ solution rm::intra_exchange(solution& s)   //OK
         cust=arr[r].NO;
         l=rand()%(arr.size()-2)+1;
         clost=find(Nlist[cust].begin(),Nlist[cust].end(),arr[l].NO);
-    }while(l==r||clost==Nlist[cust].end());
+    }
+    while(l==r||clost==Nlist[cust].end());
 
     vector<node>& ary=tmp.route_set[position];
     swap(ary[r],ary[l]);
@@ -467,22 +552,26 @@ solution rm::inter_exchange(solution& s)   //OK
     solution tmp=s;
     int rsize=tmp.route_set.size();
 
-    int position=rand()%rsize;
-    vector<node>& ary1=tmp.route_set[position];
-    int r1,r2,p,cust;
+
+    int r1,r2,p,cust,position;
     vector<int>::iterator clost;
     do
     {
+        position=rand()%rsize;
+        vector<node>& ary1=tmp.route_set[position];
         r1=rand()%(ary1.size()-2)+1;
         cust=ary1[r1].NO;
         do
         {
             p=rand()%rsize;
-        }while(p==position);
+        }
+        while(p==position);
         vector<node>& ary=tmp.route_set[p];
         r2=rand()%(ary.size()-2)+1;
         clost=find(Nlist[cust].begin(),Nlist[cust].end(),ary[r2].NO);
-    }while(clost==Nlist[cust].end());
+    }
+    while(clost==Nlist[cust].end());
+    vector<node>& ary1=tmp.route_set[position];
     vector<node>& ary2=tmp.route_set[p];
     swap(ary1[r1],ary2[r2]);
     tmp.setCost(Dist_table,custList,Vcapacity,alpha);
@@ -515,6 +604,94 @@ void getAllSubsets(vector<vector<int>>& subset,int& rsize,int& k)
         {
             if((int)subsetTemp[j].size()<k)
                 subset.push_back(subsetTemp[j]);
+        }
+    }
+}
+
+void rm::Allsubset(vector<node>& route, vector<node>& Eject, int& Pbest, pair<int,vector<node>>& best, int routeNO, vector<int>& pcnt)
+{
+    int size=route.size()-2;
+    vector<int> ejectPool(5);
+    for(int i=1; i<=size; ++i)
+    {
+        ejectPool.resize(1);
+        ejectPool[0]=i;
+        cal_eject(route,ejectPool,Eject,Pbest,best,routeNO,pcnt);
+        for(int j=i+1; j<=size; ++j)
+        {
+            ejectPool.resize(2);
+            ejectPool[1]=j;
+            cal_eject(route,ejectPool,Eject,Pbest,best,routeNO,pcnt);
+            if(size>=3)
+            {
+                for(int k=j+1; k<=size; ++k)
+                {
+                    ejectPool.resize(3);
+                    ejectPool[2]=k;
+                    cal_eject(route,ejectPool,Eject,Pbest,best,routeNO,pcnt);
+                    if(size>=4)
+                    {
+                        for(int m=k+1; m<=size; ++m)
+                        {
+                            ejectPool.resize(4);
+                            ejectPool[3]=m;
+                            cal_eject(route,ejectPool,Eject,Pbest,best,routeNO,pcnt);
+                            if(size>=5)
+                            {
+                                for(int n=m+1; n<=size; ++n)
+                                {
+                                    ejectPool.resize(5);
+                                    ejectPool[4]=n;
+                                    cal_eject(route,ejectPool,Eject,Pbest,best,routeNO,pcnt);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void rm::cal_eject(vector<node>& route,vector<int>& order,vector<node>& Eject,int& Pbest,pair<int,vector<node>>& best,int routeNO,vector<int>& pcnt)
+{
+    int origCap=route.back().cap;
+    int tail=order.size();
+    int Psum=0;
+    int Cap=0;
+
+    for(int i=0; i<tail; ++i)
+    {
+        int p=order[i];
+        Psum+=pcnt[route[p].NO];
+        Cap+=custList[route[p].NO].Demand;
+    }
+    if(Psum<Pbest)  //continue to check feasibility
+    {
+        vector<node> tmp((int)route.size()-tail);
+        int cnt=0;
+        for(int l=0,m=0; l<(int)route.size(); ++l)
+        {
+            if(l!=order[cnt])
+            {
+                tmp[m]=route[l];
+                ++m;
+            }
+            else
+                cnt=((cnt+1)==tail)?0:cnt+1;
+        }
+        int newC=origCap-Cap;
+        if(check(tmp)&&(newC<=Vcapacity))
+        {
+            Pbest=Psum;
+            best=make_pair(routeNO,tmp);   //record the position
+            vector<node> ejpool(tail);
+            for(int l=0; l<tail; ++l)
+            {
+                int p=order[l];
+                ejpool[l]=route[p];
+            }
+            Eject=ejpool;            //record the ejected customers
         }
     }
 }
@@ -573,7 +750,7 @@ void rm::exe()
     double time=0;
     chrono::steady_clock::time_point  t1, t2;
     t1 = chrono::steady_clock::now();
-    while(time<Mtime&&sol.route_set.size()>LB)
+    while(time<Mtime && sol.route_set.size()>LB)
     {
         vector<node> EP;     // Ejection pool
         //-------------------------------------------------------------------------------------------------------
@@ -607,14 +784,12 @@ void rm::exe()
             }
             else        //Squeeze
             {
-                auto Min = min_element(infeasible.begin(),infeasible.end());
-                solution tmp = Min->second;
-                double penalty = tmp.Fp;
+                double penalty = minS.Fp;
                 while(penalty!=0)
                 {
-                    solution orig = tmp;
+                    solution orig = minS;
                     //random select an infeasible route
-                    vector<vector<node>>& arr = tmp.route_set;
+                    vector<vector<node>>& arr = minS.route_set;
                     vector<int> infeasible_route;
                     for(unsigned int i=0; i<arr.size(); ++i) //record all infeasible routes
                     {
@@ -625,26 +800,26 @@ void rm::exe()
                     }
                     int r=rand()%infeasible_route.size();   //select an infeasible route
                     int selected=infeasible_route[r];
-                    squeeze(tmp,selected);
-                    if(tmp.Fp < penalty)
-                        penalty=tmp.Fp;
+                    squeeze(minS,selected);
+                    if(minS.Fp < penalty)
+                        penalty=minS.Fp;
                     else
                     {
-                        tmp=orig;
+                        minS=orig;
                         break;
                     }
                 }
-                if(tmp.Fp!=0)
+                if(minS.Fp!=0)
                 {
                     sign=false;
-                    if(tmp.Pc<tmp.Ptw)
+                    if(minS.Pc<minS.Ptw)
                         alpha/=0.99;
-                    if(tmp.Pc>tmp.Ptw)
+                    if(minS.Pc>minS.Ptw)
                         alpha*=0.99;
                 }
                 else
                 {
-                    sol=tmp;
+                    sol=minS;
                     sign=true;
                 }
             }
@@ -658,50 +833,57 @@ void rm::exe()
                 int cnt=0;
                 for(unsigned int i=0; i<sol.route_set.size(); ++i)          //calculate all possible position
                 {
-                    int rs=sol.route_set[i].size()-1;
-                    vector<vector<int>> ej;
-                    getAllSubsets(ej,rs,kmax);
+//                    int rs=sol.route_set[i].size()-1;
+//                    vector<vector<int>> ej;
+//                    getAllSubsets(ej,rs,kmax);
                     for(unsigned int j=1; j<sol.route_set[i].size(); ++j)
                     {
                         vector<node> &arr=infeasible[cnt].second.route_set[i];  //infeasible route
-                        for(unsigned int k=1; k<ej.size(); ++k)
-                        {
-                            int tail=ej[k].size();
-                            int Psum=0;
-                            for(int l=0; l<tail; ++l)
-                            {
-                                int p=ej[k][l];
-                                Psum+=pcnt[arr[p].NO];
-                            }
-                            //---------------------------------------------------------------------
-                            if(Psum<Pbest)  //continue to check feasibility
-                            {
-                                vector<node> tmp;
-                                int cnt2=0;
-                                for(int l=0,m=0; l<(int)arr.size(); ++l)
-                                {
-                                    if(l!=ej[k][cnt2])
-                                    {
-                                        tmp.push_back(arr[l]);
-                                        ++m;
-                                    }
-                                    else
-                                        cnt2=((cnt2+1)==tail)?0:cnt2+1;
-                                }
-                                if(check(tmp))
-                                {
-                                    Pbest=Psum;
-                                    best=make_pair(i,tmp);   //record the position
-                                    vector<node> ejpool(tail);
-                                    for(int l=0; l<tail; ++l)
-                                    {
-                                        int p=ej[k][l];
-                                        ejpool[l]=arr[p];
-                                    }
-                                    eject=ejpool;            //record the ejected customers
-                                }
-                            }
-                        }
+                        //-----------------------------------------------------------------------------------
+                        Allsubset(arr,eject,Pbest,best,i,pcnt);
+                        //-----------------------------------------------------------------------------------
+//                          int origCap=arr.back().cap;
+//                        for(unsigned int k=1; k<ej.size(); ++k)
+//                        {
+//                            int tail=ej[k].size();
+//                            int Psum=0;
+//                            int Cap=0;
+//                            for(int l=0; l<tail; ++l)
+//                            {
+//                                int p=ej[k][l];
+//                                Psum+=pcnt[arr[p].NO];
+//                                Cap+=custList[arr[p].NO].Demand;
+//                            }
+//                            //---------------------------------------------------------------------
+//                            if(Psum<Pbest)  //continue to check feasibility
+//                            {
+//                                vector<node> tmp((int)arr.size()-tail);
+//                                int cnt2=0;
+//                                for(int l=0,m=0; l<(int)arr.size(); ++l)
+//                                {
+//                                    if(l!=ej[k][cnt2])
+//                                    {
+//                                        tmp[m]=arr[l];
+//                                        ++m;
+//                                    }
+//                                    else
+//                                        cnt2=((cnt2+1)==tail)?0:cnt2+1;
+//                                }
+//                                int newC=origCap-Cap;
+//                                if(check(tmp)&&(newC<=Vcapacity))
+//                                {
+//                                    Pbest=Psum;
+//                                    best=make_pair(i,tmp);   //record the position
+//                                    vector<node> ejpool(tail);
+//                                    for(int l=0; l<tail; ++l)
+//                                    {
+//                                        int p=ej[k][l];
+//                                        ejpool[l]=arr[p];
+//                                    }
+//                                    eject=ejpool;            //record the ejected customers
+//                                }
+//                            }
+//                        }
                         ++cnt;
                     }
                 }
@@ -722,13 +904,13 @@ void rm::exe()
     cout << "---------- GB: " << sol.Nvehicle << "----------" << endl;
     //------------------------------------------------------------------------------------
     ofstream f_best_No;
-    string c="result/"+input+"/best(Nvehicle).txt";
+    string c="result/"+input+"/bestNvehicle.txt";
     f_best_No.open(c);
     f_best_No << sol.route_set.size() <<  endl;
     f_best_No.close();
 
     ofstream f_best_R;
-    string d="result/"+input+"/best(Route).txt";
+    string d="result/"+input+"/bestRoute.txt";
     f_best_R.open(d);
     for(unsigned int i=0; i<sol.route_set.size(); ++i)
     {

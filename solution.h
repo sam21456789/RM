@@ -30,7 +30,6 @@ class solution
 
         void setCost(vector<vector<double>>& Dist_table,vector<customer>& data,int Mcapacity,double alpha);
         void setCost(vector<vector<double>>& Dist_table,vector<customer>& data,int Mcapacity,double alpha,int route);
-//        void rmCost(int routeNum,double alpha,int Mcapacity);
         void print();
 };
 
