@@ -6,7 +6,6 @@
 #include "customer.h"
 #include "node.h"
 #include "solution.h"
-#include "object.h"
 
 using namespace std;
 
@@ -16,15 +15,15 @@ class rm
         int maxVehicle;
         int Vcapacity;
         string input;
-        vector<customer> custList;              //customer list (about data)
+        vector<customer> custList;              //Customer list (about data)
         vector<vector<double>> Dist_table;      //Distance table
-        int NumOfCust=0;
+        int NumOfCust;
         double Mtime;
         double Irand=1000;
         double alpha=1.0;
         int kmax=5;
-        vector<vector<int>> Nlist;          //Neighbor list
-        solution minS;
+        vector<vector<int>> Nlist;              //Neighbor list
+        solution minS;                          //Record the minimum infeasible solution
 
     public:
 
@@ -32,7 +31,7 @@ class rm
 
         bool check(vector<node>& route);
 
-        void randominsert(node& cust, solution& s, vector<solution>& feasible_set, vector<pair<object,solution>>& infeasible_set);
+        void randominsert(node& cust, solution& s, vector<solution>& feasible_set, vector<pair<double,solution>>& infeasible_set);
 
         void squeeze(solution& s,int& position);
 

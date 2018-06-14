@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS := -g -Wall -std=c++11 -O3
-SRCS := customer.cpp node.cpp object.cpp solution.cpp rm.cpp main.cpp
+SRCS := customer.cpp node.cpp solution.cpp rm.cpp main.cpp
 OBJS := $(SRCS:.cpp=.o)
 
 all: main

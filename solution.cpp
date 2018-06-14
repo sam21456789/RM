@@ -59,7 +59,7 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
                 j->cap=c;
             }
             double Ptwb=0;  //backward penalty
-            for(auto j=i->rbegin()+1; j!=i->rend(); ++j)
+            for(auto j=i->rbegin()+1; j!=i->rend()-1; ++j)
             {
                 int src=(j-1)->NO;
                 int dest=j->NO;
