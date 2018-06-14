@@ -18,7 +18,7 @@ class rm
         vector<customer> custList;              //Customer list (about data)
         vector<vector<double>> Dist_table;      //Distance table
         int NumOfCust;
-        double Mtime;
+        int Mtime;
         double Irand=1000;
         double alpha=1.0;
         int kmax=5;

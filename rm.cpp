@@ -12,15 +12,6 @@
 
 #define near 100
 
-void print(vector<node>& ary)
-{
-    for(auto& i:ary)
-    {
-        cout << setw(4) << i.NO;
-    }
-    cout << endl;
-}
-//-----------------------------------------------------------------------------------------------------------
 rm::rm(const string inputdata,const double maxtime)
 {
     cout << inputdata << endl;
