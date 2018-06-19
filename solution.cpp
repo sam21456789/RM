@@ -58,21 +58,21 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
                 j->twf=Ptwf;     // forward penalty at customer j
                 j->cap=c;
             }
-            double Ptwb=0;  //backward penalty
-            for(auto j=i->rbegin()+1; j!=i->rend()-1; ++j)
-            {
-                int src=(j-1)->NO;
-                int dest=j->NO;
-                double z_j= (j-1)->ltArrival-Dist_table[src][dest]-data[dest].Tservice;
-                if(z_j >= data[dest].Tready)      // z_j >= e_j
-                    j->ltArrival= min(z_j,data[dest].Tdue);
-                else
-                {
-                    j->ltArrival= data[dest].Tready;
-                    Ptwb+= (data[dest].Tready-z_j);
-                }
-                j->twb=Ptwb;
-            }
+//            double Ptwb=0;  //backward penalty
+//            for(auto j=i->rbegin()+1; j!=i->rend()-1; ++j)
+//            {
+//                int src=(j-1)->NO;
+//                int dest=j->NO;
+//                double z_j= (j-1)->ltArrival-Dist_table[src][dest]-data[dest].Tservice;
+//                if(z_j >= data[dest].Tready)      // z_j >= e_j
+//                    j->ltArrival= min(z_j,data[dest].Tdue);
+//                else
+//                {
+//                    j->ltArrival= data[dest].Tready;
+//                    Ptwb+= (data[dest].Tready-z_j);
+//                }
+//                j->twb=Ptwb;
+//            }
             _Ptw+=Ptwf;
             _Pc+=(c>Mcapacity)?(c-Mcapacity):0;     //if greater than max capacity
             ++i;
@@ -107,28 +107,29 @@ void solution::setCost(vector<vector<double>>& Dist_table,vector<customer>& data
         i->twf=Ptwf;     // forward penalty at customer j
         i->cap=c;
     }
-    double Ptwb=0;  //backward penalty
-    for(auto i=route_set[routeNum].rbegin()+1; i!=route_set[routeNum].rend(); ++i)
-    {
-        int src=(i-1)->NO;
-        int dest=i->NO;
-        double z_i= (i-1)->ltArrival-Dist_table[src][dest]-data[dest].Tservice;
-        if(z_i >= data[dest].Tready)      // z_j >= e_j
-            i->ltArrival= min(z_i,data[dest].Tdue);
-        else
-        {
-            i->ltArrival= data[dest].Tready;
-            Ptwb+= (data[dest].Tready-z_i);
-        }
-        i->twb=Ptwb;
-    }
+//    double Ptwb=0;  //backward penalty
+//    for(auto i=route_set[routeNum].rbegin()+1; i!=route_set[routeNum].rend()-1; ++i)
+//    {
+//        int src=(i-1)->NO;
+//        int dest=i->NO;
+//        double z_i= (i-1)->ltArrival-Dist_table[src][dest]-data[dest].Tservice;
+//        if(z_i >= data[dest].Tready)      // z_j >= e_j
+//            i->ltArrival= min(z_i,data[dest].Tdue);
+//        else
+//        {
+//            i->ltArrival= data[dest].Tready;
+//            Ptwb+= (data[dest].Tready-z_i);
+//        }
+//        i->twb=Ptwb;
+//    }
     double newPc=(c>Mcapacity)?c-Mcapacity:0;
     double newPtw=Ptwf;
 
-
-    this->Pc-=(newPc-oriPc);
-    this->Ptw-=(newPtw-oriPtw);
-    this->Fp=this->Pc+alpha*this->Ptw;
+    this->Pc-=oriPc;
+    this->Pc+=newPc;
+    this->Ptw-=oriPtw;
+    this->Ptw+=newPtw;
+    this->Fp=Pc+alpha*Ptw;
     this->Nvehicle=route_set.size();
 }
 

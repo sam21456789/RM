@@ -84,9 +84,9 @@ void rm::randominsert(node& cust, solution& s, vector<solution>& feasible_set, v
     solution tmp=s;  //copy solution
     double minFp=DBL_MAX;
     bool sign=true;
-    for(unsigned int i=0; i<s.route_set.size(); ++i)          //calculate all possible position
+    for(unsigned int i=0; i< s.route_set.size(); ++i)          //calculate all possible position
     {
-        for(unsigned int j=1; j<s.route_set[i].size(); ++j)
+        for(unsigned int j=1; j< s.route_set[i].size(); ++j)
         {
             vector<node>& arr=tmp.route_set[i];
             arr.insert(arr.begin()+j,cust);
@@ -728,6 +728,7 @@ void rm::exe()
             sol=original;
         t2 = chrono::steady_clock::now();
         time=chrono::duration_cast<chrono::seconds>(t2 - t1).count();
+        cout << "---------- GB: " << sol.Nvehicle << "----------" << endl;
     }
     cout << "---------- GB: " << sol.Nvehicle << "----------" << endl;
     //------------------------------------------------------------------------------------
